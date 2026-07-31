@@ -64,7 +64,7 @@ CLASSIFICATION_WEIGHTS = {
     "edge_density": 1,
 }
 
-GROQ_DEFAULT_KEY = "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"
+GROQ_DEFAULT_KEY = "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"
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
 PHASE_IDLE = "idle"
