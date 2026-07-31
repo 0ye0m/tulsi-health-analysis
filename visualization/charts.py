@@ -57,34 +57,124 @@ def make_segmentation_vis(inter: dict, metrics: dict) -> bytes:
     plt.tight_layout()
     return _save_fig(fig)
 
-
 def make_rgb_bands(inter: dict, metrics: dict) -> bytes:
     img_rgb = inter["img_rgb"]
     R, G, B = inter["R_full"], inter["G_full"], inter["B_full"]
     leaf_bool = inter["leaf_bool"]
+
+    # Mask RGB channels so background stays dark
     R_vis = R.copy()
     R_vis[~leaf_bool] = 15
+
     G_vis = G.copy()
     G_vis[~leaf_bool] = 15
+
     B_vis = B.copy()
     B_vis[~leaf_bool] = 15
-    fig, axes = plt.subplots(2, 2, figsize=(9, 9), facecolor="#0f1a12")
+
+    # Convert original RGB image to grayscale
+    gray = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
+
+    # Keep only leaf region in grayscale
+    gray_vis = gray.copy()
+    gray_vis[~leaf_bool] = 15
+
+    # Mean grayscale intensity of leaf pixels
+    gray_mean = np.mean(gray[leaf_bool])
+
+    # 2 rows x 3 columns
+    fig, axes = plt.subplots(
+        2, 3,
+        figsize=(13, 8),
+        facecolor="#0f1a12"
+    )
+
     axes = axes.flatten()
+
+    # Original
     axes[0].imshow(img_rgb)
-    axes[0].set_title("Original RGB", color="#a5d6a7", fontsize=10, fontweight="bold", pad=8)
-    axes[1].imshow(R_vis.astype(np.uint8), cmap="Reds", vmin=0, vmax=255)
-    axes[1].set_title(f"Red Channel  (Leaf Mean:{metrics['r_mean']:.0f})", color="#f87171", fontsize=10, pad=8)
-    axes[2].imshow(G_vis.astype(np.uint8), cmap="Greens", vmin=0, vmax=255)
-    axes[2].set_title(f"Green Channel (Leaf Mean:{metrics['g_mean']:.0f})", color="#4ade80", fontsize=10, pad=8)
-    axes[3].imshow(B_vis.astype(np.uint8), cmap="Blues", vmin=0, vmax=255)
-    axes[3].set_title(f"Blue Channel  (Leaf Mean:{metrics['b_mean']:.0f})", color="#60a5fa", fontsize=10, pad=8)
-    for ax in axes:
+    axes[0].set_title(
+        "Original RGB",
+        color="#a5d6a7",
+        fontsize=10,
+        fontweight="bold",
+        pad=8,
+    )
+
+    # Red
+    axes[1].imshow(
+        R_vis.astype(np.uint8),
+        cmap="Reds",
+        vmin=0,
+        vmax=255
+    )
+    axes[1].set_title(
+        f"Red Channel (Leaf Mean: {metrics['r_mean']:.0f})",
+        color="#f87171",
+        fontsize=10,
+        pad=8,
+    )
+
+    # Green
+    axes[2].imshow(
+        G_vis.astype(np.uint8),
+        cmap="Greens",
+        vmin=0,
+        vmax=255
+    )
+    axes[2].set_title(
+        f"Green Channel (Leaf Mean: {metrics['g_mean']:.0f})",
+        color="#4ade80",
+        fontsize=10,
+        pad=8,
+    )
+
+    # Blue
+    axes[3].imshow(
+        B_vis.astype(np.uint8),
+        cmap="Blues",
+        vmin=0,
+        vmax=255
+    )
+    axes[3].set_title(
+        f"Blue Channel (Leaf Mean: {metrics['b_mean']:.0f})",
+        color="#60a5fa",
+        fontsize=10,
+        pad=8,
+    )
+
+    # Grayscale
+    axes[4].imshow(
+        gray_vis.astype(np.uint8),
+        cmap="gray",
+        vmin=0,
+        vmax=255
+    )
+    axes[4].set_title(
+        f"Grayscale (Leaf Mean: {gray_mean:.0f})",
+        color="#d1d5db",
+        fontsize=10,
+        pad=8,
+    )
+
+    # Last cell unused
+    axes[5].axis("off")
+
+    for ax in axes[:5]:
         ax.axis("off")
         ax.set_facecolor("#0a1a0d")
-    fig.suptitle("RGB Channel Decomposition (Leaf Region Only)", color="#e8f5e9", fontsize=12, fontweight="bold", y=0.98)
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
-    return _save_fig(fig)
 
+    fig.suptitle(
+        "RGB + Grayscale Channel Decomposition (Leaf Region Only)",
+        color="#e8f5e9",
+        fontsize=12,
+        fontweight="bold",
+        y=0.98,
+    )
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+
+    return _save_fig(fig)
 
 def make_disease_spot_map(inter: dict, metrics: dict) -> bytes:
     img_rgb = inter["img_rgb"].copy()
